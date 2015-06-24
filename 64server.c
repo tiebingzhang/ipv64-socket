@@ -17,6 +17,26 @@
 #define FALSE              0
 #define TRUE				1
 
+int getPeerNameStr(int sock, char* outbuf, int outbuf_len){
+   struct sockaddr_in6 clientaddr;
+   socklen_t addrlen=sizeof(clientaddr);
+	getpeername(sock, (struct sockaddr *)&clientaddr, &addrlen);
+	if(inet_ntop(AF_INET6, &clientaddr.sin6_addr, outbuf, outbuf_len)==NULL) {
+		printf("inet_ntop error");
+		return -1;
+	}
+	if (strchr(outbuf,'.')){
+		int len=strlen(outbuf);
+		char *p=strrchr(outbuf,':');
+		if (p){
+			memmove(outbuf,p+1,(len-(p-outbuf)));
+		}
+	}
+	printf("Client address is %s\n", outbuf);
+	printf("Client port is %d\n", ntohs(clientaddr.sin6_port));
+	return 0;
+}
+
 int main()
 {
    /***********************************************************************/
@@ -25,8 +45,7 @@ int main()
    int sd=-1, sdconn=-1;
    int rc, on=1, rcdsize=BUFFER_LENGTH;
    char buffer[BUFFER_LENGTH];
-   struct sockaddr_in6 serveraddr, clientaddr;
-   socklen_t addrlen=sizeof(clientaddr);
+   struct sockaddr_in6 serveraddr;
    char str[INET6_ADDRSTRLEN];
 
    /***********************************************************************/
@@ -119,11 +138,7 @@ int main()
 			  /* an IPv4 client, the address will be shown as an IPv4 Mapped   */
 			  /* IPv6 address.                                                 */
 			  /*****************************************************************/
-			  getpeername(sdconn, (struct sockaddr *)&clientaddr, &addrlen);
-			  if(inet_ntop(AF_INET6, &clientaddr.sin6_addr, str, sizeof(str))) {
-				  printf("Client address is %s\n", str);
-				  printf("Client port is %d\n", ntohs(clientaddr.sin6_port));
-			  }
+			  getPeerNameStr(sdconn,str,sizeof(str));
 		  }
 
 		  /********************************************************************/
