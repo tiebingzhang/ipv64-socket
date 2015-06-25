@@ -17,10 +17,7 @@
 #define FALSE              0
 #define TRUE				1
 
-int getPeerNameStr(int sock, char* outbuf, int outbuf_len){
-   struct sockaddr_in6 clientaddr;
-   socklen_t addrlen=sizeof(clientaddr);
-	getpeername(sock, (struct sockaddr *)&clientaddr, &addrlen);
+int getPeerNameStr(struct sockaddr_in6 clientaddr, char* outbuf, int outbuf_len){
 	if(inet_ntop(AF_INET6, &clientaddr.sin6_addr, outbuf, outbuf_len)==NULL) {
 		printf("inet_ntop error");
 		return -1;
@@ -35,6 +32,13 @@ int getPeerNameStr(int sock, char* outbuf, int outbuf_len){
 	printf("Client address is %s\n", outbuf);
 	printf("Client port is %d\n", ntohs(clientaddr.sin6_port));
 	return 0;
+}
+
+int getSockPeerNameStr(int sock, char* outbuf, int outbuf_len){
+   struct sockaddr_in6 clientaddr;
+   socklen_t addrlen=sizeof(struct sockaddr_in6);
+   getpeername(sock, (struct sockaddr *)&clientaddr, &addrlen);
+   return getPeerNameStr(clientaddr,outbuf,outbuf_len);
 }
 
 int main()
@@ -121,13 +125,16 @@ int main()
 
 
 	  while(1){
+		  struct sockaddr_in6 clientaddr;
+		  socklen_t addrlen=sizeof(struct sockaddr_in6);
+		  //getpeername(sock, (struct sockaddr *)&clientaddr, &addrlen);
 		  /********************************************************************/
 		  /* The server uses the accept() function to accept an incoming      */
 		  /* connection request.  The accept() call will block indefinitely   */
 		  /* waiting for the incoming connection to arrive from an IPv4 or    */
 		  /* IPv6 client.                                                     */
 		  /********************************************************************/
-		  if ((sdconn = accept(sd, NULL, NULL)) < 0) {
+		  if ((sdconn = accept(sd, (struct sockaddr *)&clientaddr, &addrlen)) < 0) {
 			  perror("accept() failed");
 			  break;
 		  }
@@ -138,7 +145,7 @@ int main()
 			  /* an IPv4 client, the address will be shown as an IPv4 Mapped   */
 			  /* IPv6 address.                                                 */
 			  /*****************************************************************/
-			  getPeerNameStr(sdconn,str,sizeof(str));
+			  getPeerNameStr(clientaddr,str,sizeof(str));
 		  }
 
 		  /********************************************************************/
